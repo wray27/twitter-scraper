@@ -4,11 +4,14 @@ from datetime import datetime
 from urllib.parse import quote
 from lxml.etree import ParserError
 import mechanicalsoup
+import pprint
+
 
 session = HTMLSession()
 
 browser = mechanicalsoup.StatefulBrowser()
 browser.addheaders = [('User-agent', 'Firefox')]
+
 
 def get_tweets(query, pages=25):
     """Gets tweets for a given user, via the Twitter frontend API."""
@@ -20,7 +23,7 @@ def get_tweets(query, pages=25):
     else:
         url = f'https://twitter.com/i/profiles/show/{query}/timeline/tweets?'
     url += after_part
-    
+
     headers = {
         'Accept': 'application/json, text/javascript, */*; q=0.01',
         'Referer': f'https://twitter.com/{query}',
@@ -53,10 +56,16 @@ def get_tweets(query, pages=25):
                     text = tweet.find('.tweet-text')[0].full_text
                 except IndexError:  # issue #50
                     continue
-
+            
+              
+                tweet_username = tweet.find(
+                    'div')[0].attrs['data-screen-name']
+                   
+            
                 tweet_id = tweet.attrs['data-item-id']
 
-                time = datetime.fromtimestamp(int(tweet.find('._timestamp')[0].attrs['data-time-ms']) / 1000.0)
+                time = datetime.fromtimestamp(
+                    int(tweet.find('._timestamp')[0].attrs['data-time-ms']) / 1000.0)
 
                 interactions = [
                     x.text
@@ -64,18 +73,21 @@ def get_tweets(query, pages=25):
                 ]
 
                 replies = int(
-                    interactions[0].split(' ')[0].replace(comma, '').replace(dot, '')
+                    interactions[0].split(' ')[0].replace(
+                        comma, '').replace(dot, '')
                     or interactions[3]
                 )
 
                 retweets = int(
-                    interactions[1].split(' ')[0].replace(comma, '').replace(dot, '')
+                    interactions[1].split(' ')[0].replace(
+                        comma, '').replace(dot, '')
                     or interactions[4]
                     or interactions[5]
                 )
 
                 likes = int(
-                    interactions[2].split(' ')[0].replace(comma, '').replace(dot, '')
+                    interactions[2].split(' ')[0].replace(
+                        comma, '').replace(dot, '')
                     or interactions[6]
                     or interactions[7]
                 )
@@ -118,17 +130,21 @@ def get_tweets(query, pages=25):
                     'entries': {
                         'hashtags': hashtags, 'urls': urls,
                         'photos': photos, 'videos': videos
-                    }
+                    },
+                    'username': tweet_username
                 })
 
             last_tweet = html.find('.stream-item')[-1].attrs['data-item-id']
 
             for tweet in tweets:
-                    tweet['text'] = re.sub(r'(\S)http', '\g<1> http', tweet['text'], 1)
-                    tweet['text'] = re.sub(r'(\S)pic\.twitter', '\g<1> pic.twitter', tweet['text'], 1)
-                    yield tweet
+                tweet['text'] = re.sub(
+                    r'(\S)http', '\g<1> http', tweet['text'], 1)
+                tweet['text'] = re.sub(
+                    r'(\S)pic\.twitter', '\g<1> pic.twitter', tweet['text'], 1)
+                yield tweet
 
-            r = session.get(url, params={'max_position': last_tweet}, headers=headers)
+            r = session.get(
+                url, params={'max_position': last_tweet}, headers=headers)
             pages += -1
 
     yield from gen_tweets(pages)
