@@ -4,7 +4,7 @@ from datetime import datetime
 from urllib.parse import quote
 from lxml.etree import ParserError
 import mechanicalsoup
-
+from .profile import Profile
 
 
 session = HTMLSession()
