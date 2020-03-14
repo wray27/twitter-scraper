@@ -4,7 +4,7 @@ from datetime import datetime
 from urllib.parse import quote
 from lxml.etree import ParserError
 import mechanicalsoup
-import pprint
+from profile import Profile
 
 
 session = HTMLSession()
@@ -61,7 +61,9 @@ def get_tweets(query, pages=25):
                 tweet_username = tweet.find(
                     'div')[0].attrs['data-screen-name']
                    
-            
+                tweet_userprofile = Profile(tweet_username)
+                print(tweet_userprofile.location)
+
                 tweet_id = tweet.attrs['data-item-id']
 
                 time = datetime.fromtimestamp(
